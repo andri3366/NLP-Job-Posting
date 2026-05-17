@@ -4,7 +4,7 @@ import joblib
 import os
 from src.predict import predict_posting
 from src.predict_text import predict_posting_text
-
+from src.llm_explain import explain_prediction
 # with open('model/lr_model.pkl', 'rb') as f:
 #     model = joblib.load(f)
 
@@ -28,6 +28,11 @@ cat_columns = joblib.load(cat_features_path)
 text_model = joblib.load(text_model_path)
 text_vectorizer = joblib.load(text_vectorizer_path)
 
+if 'result' not in st.session_state:
+    st.session_state.result = None
+if 'text' not in st.session_state:
+    st.session_state.text = ""
+    
 st.title("Fake Job Postings Detection")
 st.write("This app detects whether a job posting is fake or not based on its description and other features.")
 st.write("Please enter the job posting details below:")
@@ -39,17 +44,40 @@ if mode == "Text Only Model":
     text = st.text_area("Job Description")
     
     if st.button('Analyze Text'):
-        result = predict_posting_text(text)
+        st.session_state.result = predict_posting_text(text)
+        st.session_state.text = text
         
+    if st.session_state.result:
+        result = st.session_state.result
+
         st.success(
             f"Prediction: {result['label']} "
         )
         
         st.write(f"Confidence: {result['confidence']:.2f}")
+        
+        st.divider()
+        st.subheader("Model Explanation")
+        
+        prompt = st.text_input(
+            "Ask a question about the prediction",
+            max_chars=200,
+            placeholder="e.g., Why was this job posting classified as fraudulent?"
+        )
+        
+        if st.button('Get Explanation', key="text_explanation_btn"):
+            with st.spinner("Generating explanation..."):
+                explanation = explain_prediction(
+                    prediction=result['label'],
+                    text=st.session_state.text,
+                    prompt=prompt
+                )
+                
+            st.info(explanation)
 else:
     title = st.text_input("Job Title")
     company_profile = st.text_area("Company Profile")
-    description = st.text_area("Job Description")
+    text = st.text_area("Job Description")
     requirements = st.text_area("Job Requirements")
     benefits = st.text_area("Job Benefits")
     
@@ -79,7 +107,13 @@ else:
 
     if st.button('Analyze Posting'):
         
-        text = (title + ' ' + company_profile + ' ' + description + ' ' + requirements + ' ' + benefits)
+        st.session_state.result = predict_posting_text(text)
+        st.session_state.text = text
+        
+        result = st.session_state.result
+        text = st.session_state.text
+        
+        combined_text = (title + ' ' + company_profile + ' ' + description + ' ' + requirements + ' ' + benefits)
         result = predict_posting(
             text,
             telecommuting,
@@ -91,8 +125,32 @@ else:
             country
         )
         
-        st.success(
-            f"Prediction: {result['label']} "
-        )
+        text = combined_text
         
-        st.write(f"Confidence: {result['confidence']:.2f}")
+        if st.session_state.result:
+            result = st.session_state.result
+            st.success(
+                f"Prediction: {result['label']} "
+            )
+        
+            st.write(f"Confidence: {result['confidence']:.2f}")
+        
+            st.divider()
+            st.subheader("Model Explanation")
+        
+            prompt = st.text_input(
+                "Ask a question about the prediction",
+                max_chars=200,
+                placeholder="e.g., Why was this job posting classified as fraudulent?"
+            )
+        
+            if st.button('Get Explanation'):
+                with st.spinner("Generating explanation..."):
+                    
+                    explanation = explain_prediction(
+                        prediction=result['label'],
+                        text=text,
+                        prompt=prompt
+                    )
+                
+                st.info(explanation)

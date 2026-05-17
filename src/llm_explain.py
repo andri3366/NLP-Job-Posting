@@ -1,6 +1,8 @@
 from openai import OpenAI, RateLimitError
-from src.hidden import key
+import os
+# from src.hidden import key
 
+key = os.getenv("OPENAI_API_KEY")
 client = OpenAI(api_key=key)
 
 def explain_prediction(prediction, text, prompt):

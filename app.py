@@ -113,7 +113,7 @@ else:
         result = st.session_state.result
         text = st.session_state.text
         
-        combined_text = (title + ' ' + company_profile + ' ' + description + ' ' + requirements + ' ' + benefits)
+        combined_text = (title + ' ' + company_profile + ' ' + text + ' ' + requirements + ' ' + benefits)
         result = predict_posting(
             text,
             telecommuting,

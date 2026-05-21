@@ -100,7 +100,8 @@ if mode == "Text Only Model":
                     st.session_state.explanation = explain_prediction(
                         prediction=result['label'],
                         text=st.session_state.text,
-                        prompt=prompt
+                        prompt=prompt,
+                        features={}
                     )     
                 
                 st.info(st.session_state.explanation)
@@ -184,12 +185,22 @@ else:
         
             if st.button('Get Explanation', key="full_explanation_btn"):
                 try:
+                    features = {
+                        "telecommuting": telecommuting,
+                        "has_company_logo": has_company_logo,
+                        "has_questions": has_questions,
+                        "employment_type": employment_type,
+                        "required_experience": required_experience,
+                        "required_education": required_education,
+                        "country": country                        
+                    }
                     with st.spinner("Generating explanation..."):
                         
                         st.session_state.explanation = explain_prediction(
                             prediction=result['label'],
                             text=st.session_state.text,
-                            prompt=prompt
+                            prompt=prompt,
+                            features={}
                         )
                     
                     st.info(st.session_state.explanation)

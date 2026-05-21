@@ -27,7 +27,7 @@ def predict_posting(text, telecommuting, has_company_logo, has_questions, employ
         'has_questions': [has_questions]
     })
     
-    # scpiry.sparse requires numeric, therefore I conferted the binary and categorical feature to int
+    # scipy.sparse requires numeric, therefore I converted the binary and categorical feature to int
     binary_features = binary_features.replace({'Yes': 1, 'No': 0})
     binary_features = binary_features.astype(int)
     

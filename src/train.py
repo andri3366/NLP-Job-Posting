@@ -45,11 +45,21 @@ extractors = {
 }
 
 models = {
-    "Logistic Regression": LogisticRegression(class_weight='balanced', max_iter=1000),
-    "Random Forest": RandomForestClassifier(class_weight='balanced', n_estimators=100, random_state=42),
-    "XGBoost": XGBClassifier(scale_pos_weight=1, n_estimators=100, random_state=42),
-    "Naive Bayes": MultinomialNB()
-                             
+    "Logistic Regression": lambda: LogisticRegression(
+        class_weight="balanced",
+        max_iter=1000
+    ),
+    "Random Forest": lambda: RandomForestClassifier(
+        class_weight="balanced",
+        n_estimators=100,
+        random_state=42
+    ),
+    "XGBoost": lambda: XGBClassifier(
+        scale_pos_weight=1,
+        n_estimators=100,
+        random_state=42
+    ),
+    "Naive Bayes": lambda: MultinomialNB()
 }
 
 splits = [0.3, 0.2, 0.15]
@@ -96,12 +106,13 @@ for extractor_name, extractor in extractors.items():
     for split in splits:
         X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=split, random_state=42, stratify=y)
         
-        for model_name, model in models.items():
+        for model_name, model_factory in models.items():
 
             # Prevent incompatibility with neg values
             if (extractor_name == "SBERT + Structured" and model_name == "Naive Bayes"):
                 continue
 
+            model = model_factory()
             model.fit(X_train, y_train)
             pred = model.predict(X_test)
             

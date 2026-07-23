@@ -3,7 +3,7 @@ import pickle
 import joblib
 import os
 from src.predict import predict_posting, get_shap_values
-from src.predict_text import predict_posting_text
+from src.predict_text import predict_posting_text, get_text_shap_values
 from src.llm_explain import explain_prediction
 # with open('model/lr_model.pkl', 'rb') as f:
 #     model = joblib.load(f)
@@ -97,13 +97,21 @@ if mode == "Text Only Model":
         
         if st.button('Get Explanation', key="text_explanation_btn"):
             try:
+                prediction = st.session_state.result
                 
+                X = prediction['X']
+                
+                shap_df = get_text_shap_values(X)
+                
+                st.subheader("Top 10 SHAP Values")
+                st.dataframe(shap_df)
                 with st.spinner("Generating explanation..."):
                     st.session_state.explanation = explain_prediction(
                         prediction=result['label'],
                         text=st.session_state.text,
                         prompt=prompt,
-                        features={}
+                        features={},
+                        shap_values=shap_df
                     )     
                 
                 st.info(st.session_state.explanation)

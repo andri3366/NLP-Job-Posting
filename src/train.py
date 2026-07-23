@@ -12,7 +12,7 @@ from xgboost import XGBClassifier
 from sklearn.naive_bayes import MultinomialNB
 
 from sklearn.metrics import f1_score 
-from src.preprocess import clean_text
+from preprocess import clean_text
 
 # Test extractors
 from feature_extractors import HybridTFIDFExtractor, HybridSBERTExtractor

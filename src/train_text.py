@@ -12,7 +12,7 @@ from xgboost import XGBClassifier
 from sklearn.naive_bayes import MultinomialNB
 
 from sklearn.metrics import f1_score 
-from src.preprocess import clean_text
+from preprocess import clean_text
 
 # test TFIDF, SBERT
 from feature_extractors import TFIDFTextExtractor, SBERTTextExtractor
@@ -84,6 +84,10 @@ for extractor_name, extractor in extractors.items():
         X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=split, random_state=42, stratify=y)
         
         for model_name, model in models.items():
+            
+            # Prevent incompatibility with neg values
+            if (extractor_name == "SBERT" and model_name == "Naive Bayes"):
+                continue
             model.fit(X_train, y_train)
             pred = model.predict(X_test)
             

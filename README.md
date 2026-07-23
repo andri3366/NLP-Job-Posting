@@ -1,6 +1,6 @@
 # Fraudulent Job Posting Web Application
 Independent project I built to challenge my knowledge of machine learning and apply topics I had learn in level 1 of my [Business Intelligence System Infrastructure](https://www.algonquincollege.com/sat/program/business-intelligence-system-infrastructure/) program at Algonquin College.
-test
+
 ## Tech stack
 - VS Code
 - Python 3.12.7 (used to save space on AWS)

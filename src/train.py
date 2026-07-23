@@ -16,7 +16,8 @@ from src.preprocess import clean_text
 
 # Test extractors
 from src.feature_extractors import HybridTFIDFExtractor, HybridSBERTExtractor
-df = pd.read_csv('../data/fake_job_postings_cleaned.csv')
+# df = pd.read_csv('../data/fake_job_postings_cleaned.csv')
+df = pd.read_csv('data/fake_job_postings_cleaned.csv')
 
 '''
     Selected columns for training
@@ -133,22 +134,43 @@ print(f"Best Model: {best_model_name} with F1 Score: {best_f1} at split: {best_s
 
 # pred = model.predict(X_test)
     
-joblib.dump(best_model, '../model/best_model.pkl')
+# joblib.dump(best_model, '../model/best_model.pkl')
+joblib.dump(best_model, 'model/best_model.pkl')
 
 if best_extractor_name == "TF-IDF + Structured":
-    joblib.dump(best_extractor.vectorizer, '../model/best_extractor_vectorizer.pkl')
-    joblib.dump(best_extractor.cat_columns,"../model/cat_features.pkl")
+    # joblib.dump(best_extractor.vectorizer, '../model/best_extractor_vectorizer.pkl')
+    # joblib.dump(best_extractor.cat_columns,"../model/cat_features.pkl")
+    # joblib.dump(
+    #     {
+    #         "extractor": "tfidf"
+    #     },
+    #     "../model/feature_info.pkl"
+    # )
+    joblib.dump(best_extractor.vectorizer, 'model/best_extractor_vectorizer.pkl')
+    joblib.dump(best_extractor.cat_columns,"model/cat_features.pkl")
     joblib.dump(
         {
             "extractor": "tfidf"
         },
-        "../model/feature_info.pkl"
+        "model/feature_info.pkl"
     )
-
 else:
+    # joblib.dump(
+    #     best_extractor.cat_columns,
+    #     "../model/cat_features.pkl"
+    # )
+
+    # joblib.dump(
+    #     {
+    #         "extractor": "sbert",
+    #         "model_name": "all-MiniLM-L6-v2"
+    #     },
+    #     "../model/feature_info.pkl"
+    # )
+
     joblib.dump(
         best_extractor.cat_columns,
-        "../model/cat_features.pkl"
+        "model/cat_features.pkl"
     )
 
     joblib.dump(
@@ -156,7 +178,7 @@ else:
             "extractor": "sbert",
             "model_name": "all-MiniLM-L6-v2"
         },
-        "../model/feature_info.pkl"
+        "model/feature_info.pkl"
     )
 # joblib.dump(vectorizer, '../model/vectorizer.pkl')
 # joblib.dump(cat_features.columns, '../model/cat_features.pkl')

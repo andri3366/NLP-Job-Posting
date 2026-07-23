@@ -17,7 +17,8 @@ from src.preprocess import clean_text
 # test TFIDF, SBERT
 from src.feature_extractors import TFIDFTextExtractor, SBERTTextExtractor
 
-df = pd.read_csv('../data/fake_job_postings_cleaned.csv')
+# df = pd.read_csv('../data/fake_job_postings_cleaned.csv')
+df = pd.read_csv('data/fake_job_postings_cleaned.csv')
 
 '''
     Selected columns for training
@@ -120,14 +121,24 @@ print(f"Best Model: {best_model_name} with F1 Score: {best_f1} at split: {best_s
 
 # pred = model.predict(X_test)
     
-joblib.dump(best_model, '../model/text_best_model.pkl')
+# joblib.dump(best_model, '../model/text_best_model.pkl')
+joblib.dump(best_model, 'model/text_best_model.pkl')
+
+# if best_extractor_name == "TF-IDF":
+#     joblib.dump(best_extractor, '../model/text_best_extractor.pkl')
+# elif best_extractor_name == "SBERT":
+
+#     joblib.dump({
+#         "type": "SBERT",
+#         "model_name" : "all-MiniLM-L6-v2"
+#     }, '../model/text_best_extractor.pkl')
 
 if best_extractor_name == "TF-IDF":
-    joblib.dump(best_extractor, '../model/text_best_extractor.pkl')
+    joblib.dump(best_extractor, 'model/text_best_extractor.pkl')
 elif best_extractor_name == "SBERT":
 
     joblib.dump({
         "type": "SBERT",
         "model_name" : "all-MiniLM-L6-v2"
-    }, '../model/text_best_extractor.pkl')
+    }, 'model/text_best_extractor.pkl')
 # joblib.dump(text_vectorizer, '../model/text_vectorizer.pkl')

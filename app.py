@@ -2,7 +2,7 @@ import streamlit as st
 import pickle
 import joblib
 import os
-from src.predict import predict_posting
+from src.predict import predict_posting, get_shap_values
 from src.predict_text import predict_posting_text
 from src.llm_explain import explain_prediction
 # with open('model/lr_model.pkl', 'rb') as f:
@@ -16,10 +16,12 @@ from src.llm_explain import explain_prediction
 
 base_dir = os.path.dirname(__file__)
 model_path = os.path.join(base_dir, 'model/best_model.pkl')
-vectorizer_path = os.path.join(base_dir, 'model/vectorizer.pkl')
+# vectorizer_path = os.path.join(base_dir, 'model/vectorizer.pkl')
+# cat_features_path = os.path.join(base_dir, 'model/cat_features.pkl')
+vectorizer_path = os.path.join(base_dir, 'model/best_extractor_vectorizer.pkl')
 cat_features_path = os.path.join(base_dir, 'model/cat_features.pkl')
 text_model_path = os.path.join(base_dir, 'model/text_best_model.pkl')
-text_vectorizer_path = os.path.join(base_dir, 'model/text_vectorizer.pkl')
+text_vectorizer_path = os.path.join(base_dir, 'model/text_best_extractor.pkl')
 
 # model = joblib.load(model_path)
 # vectorizer = joblib.load(vectorizer_path)
@@ -173,6 +175,7 @@ else:
             )
         
             st.write(f"Confidence: {result['confidence']:.2f}")
+            # st.write(f"Top SHAP Values: {result['shap']}")
         
             st.divider()
             st.subheader("Model Explanation")
@@ -185,6 +188,15 @@ else:
         
             if st.button('Get Explanation', key="full_explanation_btn"):
                 try:
+                    prediction = st.session_state.result
+
+                    X = prediction['X']
+
+                    shap_df = get_shap_values(X)
+
+                    st.subheader("Top 10 SHAP Values")
+                    st.dataframe(shap_df)
+
                     features = {
                         "telecommuting": telecommuting,
                         "has_company_logo": has_company_logo,
@@ -200,7 +212,8 @@ else:
                             prediction=result['label'],
                             text=st.session_state.text,
                             prompt=prompt,
-                            features={}
+                            features=features,
+                            shap_values=shap_df
                         )
                     
                     st.info(st.session_state.explanation)

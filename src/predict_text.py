@@ -3,16 +3,25 @@ from src.preprocess import clean_text
 import joblib
 from scipy.sparse import hstack
 import pandas as pd
+from src.predict import get_shap_values
 
-model = joblib.load('model/text_best_model.pkl')
-vectorizer = joblib.load('model/text_vectorizer.pkl')
+from pathlib import Path
+
+# model = joblib.load('../model/text_best_model.pkl')
+# # vectorizer = joblib.load('model/text_vectorizer.pkl')
+# vectorizer = joblib.load('../model/text_best_extractor.pkl')
+
+MODEL_DIR = Path(__file__).resolve().parent.parent / "model"
+
+model = joblib.load(MODEL_DIR / "text_best_model.pkl")
+vectorizer = joblib.load(MODEL_DIR / "text_best_extractor.pkl")
 
 def predict_posting_text(text):
     cleaned_text = clean_text(text)
-    text_features = vectorizer.transform([cleaned_text])
+    X = vectorizer.transform([cleaned_text])
     
-    prediction = model.predict(text_features)[0]
-    probability = model.predict_proba(text_features)[0]
+    prediction = model.predict(X)[0]
+    probability = model.predict_proba(X)[0]
     
     confidence = max(probability)
     
@@ -23,6 +32,8 @@ def predict_posting_text(text):
     
     return {
         'label': label,
-        'confidence': confidence
+        'confidence': confidence,
+        # 'shap': get_shap_values(X) if explain else None
+        'X' : X
     }
     

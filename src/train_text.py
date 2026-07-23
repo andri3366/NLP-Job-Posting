@@ -12,10 +12,10 @@ from xgboost import XGBClassifier
 from sklearn.naive_bayes import MultinomialNB
 
 from sklearn.metrics import f1_score 
-from preprocess import clean_text
+from src.preprocess import clean_text
 
 # test TFIDF, SBERT
-from feature_extractors import TFIDFTextExtractor, SBERTTextExtractor
+from src.feature_extractors import TFIDFTextExtractor, SBERTTextExtractor
 
 df = pd.read_csv('../data/fake_job_postings_cleaned.csv')
 

@@ -39,6 +39,7 @@
                             <thead>
                                 <tr>
                                     <th>Feature</th>
+                                    <th>Value</th>
                                     <th>SHAP Value</th>
                                 </tr>
                             </thead>
@@ -46,6 +47,7 @@
                                 {% for item in shap_df[:10] %}
                                 <tr>
                                     <td>{{ item.feature if item.feature else 'N/A' }}</td>
+                                    <td>{{ "%.4f"|format(item.value) if item.value is not none else 'N/A' }}</td>
                                     <td>{{ "%.4f"|format(item.shap_value) if item.shap_value else 'N/A' }}</td>
                                 </tr>
                                 {% endfor %}

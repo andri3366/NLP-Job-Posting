@@ -43,7 +43,8 @@ def get_shap_values(X):
         list(cat_columns)
     )
 
-    shap_df = pd.DataFrame({"Feature" : feature_names, "SHAP" : shap_values.values[0]})
+    feature_values = X.toarray()[0]
+    shap_df = pd.DataFrame({"Feature" : feature_names,  "Value": feature_values,"SHAP" : shap_values.values[0]})
 
     shap_df["Importance"] = shap_df["SHAP"].abs()
     shap_df = shap_df.sort_values(by="Importance", ascending=False)

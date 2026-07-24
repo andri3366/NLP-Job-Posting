@@ -26,8 +26,10 @@ def get_text_shap_values(X):
     shap_values = text_explainer(X)
     
     feature_names = vectorizer.vectorizer.get_feature_names_out()
-    
-    shap_df = pd.DataFrame({"Feature" : feature_names, "SHAP" : shap_values.values[0]})
+
+    feature_values = X.toarray()[0]
+    shap_df = pd.DataFrame({"Feature" : feature_names,  "Value": feature_values,"SHAP" : shap_values.values[0]})
+    # shap_df = pd.DataFrame({"Feature" : feature_names, "SHAP" : shap_values.values[0]})
     
     shap_df["Importance"] = shap_df["SHAP"].abs()
     shap_df = shap_df.sort_values(by="Importance", ascending=False)

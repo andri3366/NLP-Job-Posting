@@ -15,7 +15,15 @@ def explain_prediction(prediction, text, prompt, features, shap_values):
         feature_text = "\n".join(
             [f"{feature}: {value}" for feature, value in features.items()]
         )
-        shap_text = shap_values.to_string(index=False)
+        if shap_values:
+            shap_text = "\n".join(
+                [
+                    f"- {row['feature']}: value={row['value']}, SHAP={row['shap_value']:.4f}"
+                    for row in shap_values
+                ]
+            )
+        else:
+            shap_text = "No SHAP values available."
 
         response = client.chat.completions.create(
             model="gpt-4o-mini",

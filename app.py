@@ -106,9 +106,11 @@ def full_model():
             X = result.get('X')
             if X is not None:
                 shap_df = get_shap_values(X)
+                print(type(shap_df))
                 # Convert to list for JSON serialization if it's a DataFrame
                 if isinstance(shap_df, pd.DataFrame):
-                    shap_df = shap_df.to_dict('records')
+                    shap_df = shap_df.rename(columns={"Feature" : "feature", "Value" : "value", "SHAP" : "shap_value"}).to_dict('records')
+                    # shap_df = shap_df.to_dict('records')
             
             # Store ONLY what's needed for explanation in session
             # DON'T store the entire result with csr_matrix
@@ -156,7 +158,10 @@ def text_model():
                 if X is not None:
                     shap_df = get_text_shap_values(X)
                     if isinstance(shap_df, pd.DataFrame):
-                        shap_df = shap_df.to_dict('records')
+                        shap_df = shap_df.rename(columns={"Feature" : "feature", "Value" : "value", "SHAP" : "shap_value"}).to_dict('records')
+                        # shap_df = shap_df.to_dict('records')
+                        # shap_df = shap_df.rename(columns={"Feature" : "feature", "SHAP" : "shap_value"}).to_dict('records')
+
                 
                 # Store ONLY what's needed
                 session['last_label'] = result.get('label')

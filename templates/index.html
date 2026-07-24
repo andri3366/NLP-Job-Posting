@@ -1,0 +1,52 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="row">
+    <div class="col-lg-8 mx-auto">
+        <div class="text-center mb-5">
+            <h1 class="display-4">Fake Job Postings Detection</h1>
+            <p class="lead">Detect fraudulent job postings using machine learning</p>
+            <hr>
+        </div>
+
+        <div class="row mt-4">
+            <div class="col-md-6 mb-4">
+                <div class="card h-100 shadow">
+                    <div class="card-body text-center">
+                        <i class="fas fa-file-alt fa-3x text-primary mb-3"></i>
+                        <h5 class="card-title">Full Model</h5>
+                        <p class="card-text">Analyze job postings using all available features including title, description, company profile, and more.</p>
+                        <a href="{{ url_for('full_model') }}" class="btn btn-primary">
+                            Go to Full Model <i class="fas fa-arrow-right"></i>
+                        </a>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="col-md-6 mb-4">
+                <div class="card h-100 shadow">
+                    <div class="card-body text-center">
+                        <i class="fas fa-robot fa-3x text-success mb-3"></i>
+                        <h5 class="card-title">Text Only Model</h5>
+                        <p class="card-text">Quickly analyze job descriptions using just the text content. Perfect for rapid screening.</p>
+                        <a href="{{ url_for('text_model') }}" class="btn btn-success">
+                            Go to Text Model <i class="fas fa-arrow-right"></i>
+                        </a>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="card mt-4">
+            <div class="card-body">
+                <h5><i class="fas fa-info-circle text-info"></i> About This Tool</h5>
+                <p class="mb-0">
+                    This system uses advanced machine learning models to detect fraudulent job postings. 
+                    The Full Model uses all available job posting features, while the Text Only Model 
+                    focuses solely on the job description text.
+                </p>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

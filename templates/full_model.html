@@ -1,0 +1,193 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="row">
+    <div class="col-lg-10 mx-auto">
+        <h2><i class="fas fa-file-alt"></i> Full Model Analysis</h2>
+        <p class="text-muted">Enter complete job posting details for comprehensive analysis</p>
+        
+        <form method="POST" id="fullModelForm" class="mt-4">
+            <div class="row">
+                <div class="col-md-6">
+                    <div class="mb-3">
+                        <label for="title" class="form-label">Job Title</label>
+                        <input type="text" class="form-control" id="title" name="title" value="{{ text.split()[0] if text else '' }}">
+                    </div>
+                </div>
+                <div class="col-md-6">
+                    <div class="mb-3">
+                        <label for="country" class="form-label">Country</label>
+                        <select class="form-select" id="country" name="country">
+                            <option value="Missing">Missing</option>
+                            <option value="AU">AU</option>
+                            <option value="CA">CA</option>
+                            <option value="DE">DE</option>
+                            <option value="GB">GB</option>
+                            <option value="IN">IN</option>
+                            <option value="NZ">NZ</option>
+                            <option value="Other">Other</option>
+                            <option value="US">US</option>
+                        </select>
+                    </div>
+                </div>
+            </div>
+
+            <div class="mb-3">
+                <label for="company_profile" class="form-label">Company Profile</label>
+                <textarea class="form-control" id="company_profile" name="company_profile" rows="2"></textarea>
+            </div>
+
+            <div class="mb-3">
+                <label for="text" class="form-label">Job Description</label>
+                <textarea class="form-control" id="text" name="text" rows="4">{{ text if text else '' }}</textarea>
+            </div>
+
+            <div class="mb-3">
+                <label for="requirements" class="form-label">Job Requirements</label>
+                <textarea class="form-control" id="requirements" name="requirements" rows="2"></textarea>
+            </div>
+
+            <div class="mb-3">
+                <label for="benefits" class="form-label">Job Benefits</label>
+                <textarea class="form-control" id="benefits" name="benefits" rows="2"></textarea>
+            </div>
+
+            <div class="row">
+                <div class="col-md-4">
+                    <div class="mb-3">
+                        <label for="telecommuting" class="form-label">Work From Home</label>
+                        <select class="form-select" id="telecommuting" name="telecommuting">
+                            <option value="No">No</option>
+                            <option value="Yes">Yes</option>
+                        </select>
+                    </div>
+                </div>
+                <div class="col-md-4">
+                    <div class="mb-3">
+                        <label for="has_company_logo" class="form-label">Has Company Logo</label>
+                        <select class="form-select" id="has_company_logo" name="has_company_logo">
+                            <option value="No">No</option>
+                            <option value="Yes">Yes</option>
+                        </select>
+                    </div>
+                </div>
+                <div class="col-md-4">
+                    <div class="mb-3">
+                        <label for="has_questions" class="form-label">Has Questions</label>
+                        <select class="form-select" id="has_questions" name="has_questions">
+                            <option value="No">No</option>
+                            <option value="Yes">Yes</option>
+                        </select>
+                    </div>
+                </div>
+            </div>
+
+            <div class="row">
+                <div class="col-md-4">
+                    <div class="mb-3">
+                        <label for="employment_type" class="form-label">Employment Type</label>
+                        <select class="form-select" id="employment_type" name="employment_type">
+                            <option value="Missing">Missing</option>
+                            <option value="Full-time">Full-time</option>
+                            <option value="Part-time">Part-time</option>
+                            <option value="Contract">Contract</option>
+                            <option value="Temporary">Temporary</option>
+                            <option value="Other">Other</option>
+                        </select>
+                    </div>
+                </div>
+                <div class="col-md-4">
+                    <div class="mb-3">
+                        <label for="required_experience" class="form-label">Required Experience</label>
+                        <select class="form-select" id="required_experience" name="required_experience">
+                            <option value="Missing">Missing</option>
+                            <option value="Internship">Internship</option>
+                            <option value="Entry level">Entry level</option>
+                            <option value="Mid-Senior level">Mid-Senior level</option>
+                            <option value="Associate">Associate</option>
+                            <option value="Director">Director</option>
+                            <option value="Executive">Executive</option>
+                        </select>
+                    </div>
+                </div>
+                <div class="col-md-4">
+                    <div class="mb-3">
+                        <label for="required_education" class="form-label">Required Education</label>
+                        <select class="form-select" id="required_education" name="required_education">
+                            <option value="Missing">Missing</option>
+                            <option value="Bachelor's Degree">Bachelor's Degree</option>
+                            <option value="High School or equivalent">High School or equivalent</option>
+                            <option value="Unspecified">Unspecified</option>
+                            <option value="Master's Degree">Master's Degree</option>
+                            <option value="Associate Degree">Associate Degree</option>
+                            <option value="Certification">Certification</option>
+                            <option value="Some College Coursework Completed">Some College Coursework Completed</option>
+                            <option value="Professional">Professional</option>
+                            <option value="Vocational">Vocational</option>
+                            <option value="Some High School Coursework">Some High School Coursework</option>
+                            <option value="Doctorate">Doctorate</option>
+                            <option value="Vocational - Degree">Vocational - Degree</option>
+                            <option value="Vocational - HS Degree">Vocational - HS Degree</option>
+                        </select>
+                    </div>
+                </div>
+            </div>
+
+            <button type="submit" class="btn btn-primary btn-lg w-100">
+                <i class="fas fa-search"></i> Analyze Posting
+            </button>
+        </form>
+
+        <!-- Results Section -->
+        {% if result %}
+        <div class="mt-4">
+            <div class="card border-{% if result.label == 'Fake' %}danger{% else %}success{% endif %}">
+                <div class="card-header bg-{% if result.label == 'Fake' %}danger{% else %}success{% endif %} text-white">
+                    <h5 class="mb-0">Analysis Result</h5>
+                </div>
+                <div class="card-body">
+                    <h4>Prediction: <span class="text-{% if result.label == 'Fake' %}danger{% else %}success{% endif %}">
+                        {{ result.label }}
+                    </span></h4>
+                    <p>Confidence: <strong>{{ "%.2f"|format(result.confidence) }}</strong></p>
+                    
+                    {% if shap_df %}
+                    <hr>
+                    <h5><i class="fas fa-chart-bar"></i> Top SHAP Values</h5>
+                    <div class="table-responsive">
+                        <table class="table table-sm table-striped">
+                            <thead>
+                                <tr>
+                                    <th>Feature</th>
+                                    <th>SHAP Value</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for item in shap_df[:10] %}
+                                <tr>
+                                    <td>{{ item.feature if item.feature else 'N/A' }}</td>
+                                    <td>{{ "%.4f"|format(item.shap_value) if item.shap_value else 'N/A' }}</td>
+                                </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                    {% endif %}
+                    
+                    <hr>
+                    <div class="mb-3">
+                        <label for="explanationPrompt" class="form-label">Ask a question about the prediction</label>
+                        <input type="text" class="form-control" id="explanationPrompt" 
+                               placeholder="e.g., Why was this job posting classified as fraudulent?">
+                    </div>
+                    <button class="btn btn-info" id="getExplanation" data-mode="full">
+                        <i class="fas fa-comment"></i> Get Explanation
+                    </button>
+                    <div id="explanationResult" class="mt-3"></div>
+                </div>
+            </div>
+        </div>
+        {% endif %}
+    </div>
+</div>
+{% endblock %}

@@ -5,13 +5,18 @@ import os
 import json
 import pandas as pd
 import numpy as np
+from datetime import datetime
 
 from src.predict import predict_posting, get_shap_values
 from src.predict_text import predict_posting_text, get_text_shap_values
 from src.llm_explain import explain_prediction
+from auth import auth
+from supabase_client import supabase, secret_key
 
 app = Flask(__name__)
-app.secret_key = 'place_holder'
+app.secret_key = os.getenv('SECRET_KEY', 'fallback-secret-key')
+
+app.register_blueprint(auth, url_prefix='/auth')  # Register the auth blueprint
 
 # Load models
 base_dir = os.path.dirname(__file__)
@@ -46,12 +51,97 @@ def load_text_resources():
 
     return text_model, text_vectorizer
 
+def save_prediction_to_db(user_id, prediction_type, prediction_label, confidence, input_text, features=None, shap_values=None, prompt=None, explanation=None):
+    try:
+
+        if 'access_token' in session:
+            supabase.auth.set_session(
+                session.get('access_token'),
+                session.get('refresh_token')
+            )
+
+        history_data = {
+            "user_id": user_id,
+            "prediction_type": prediction_type,  
+            "prediction_label": prediction_label,
+            "confidence": float(confidence),
+            "input_text": input_text,
+            "created_at": datetime.now().isoformat()
+        }
+
+        history_result = supabase.table("prediction_history").insert(history_data).execute()
+        
+        if history_result.data:
+            prediction_id = history_result.data[0]['id']
+            
+            # If full model, save features
+            if prediction_type == 'full' and features:
+                features_data = {
+                    "prediction_id": prediction_id,
+                    "telecommuting": features.get('telecommuting') == 'Yes',
+                    "has_company_logo": features.get('has_company_logo') == 'Yes',
+                    "has_questions": features.get('has_questions') == 'Yes',
+                    "employment_type": features.get('employment_type', 'Missing'),
+                    "required_experience": features.get('required_experience', 'Missing'),
+                    "required_education": features.get('required_education', 'Missing'),
+                    "country": features.get('country', 'Missing')
+                }
+                supabase.table("prediction_features").insert(features_data).execute()
+            
+            # Save SHAP values if they exist
+            if shap_values and len(shap_values) > 0:
+                shap_data = []
+                for shap in shap_values[:10]:  # Save top 10 SHAP values
+                    shap_data.append({
+                        "prediction_id": prediction_id,
+                        "feature_name": shap.get('feature', ''),
+                        "feature_value": str(shap.get('value', '')),
+                        "shap_value": float(shap.get('shap_value', 0))
+                    })
+                if shap_data:
+                    supabase.table("shap_results").insert(shap_data).execute()
+            
+            # Save AI explanation if provided
+            if prompt and explanation:
+                explanation_data = {
+                    "prediction_id": prediction_id,
+                    "prompt": prompt,
+                    "explanation": explanation,
+                    "created_at": datetime.now().isoformat()
+                }
+                supabase.table("ai_explanations").insert(explanation_data).execute()
+            
+            return prediction_id
+    
+    except Exception as e:
+        print(f"Error saving to database: {e}")
+        import traceback
+        traceback.print_exc()
+        return None
+   
+_session_cleared = False
+
+@app.before_request
+def clear_session_on_startup():
+    global _session_cleared
+    if not _session_cleared:
+        session.clear()
+        _session_cleared = True
+        print("Session cleared on app startup")
+
 @app.route('/')
 def index():
-    return render_template('index.html')
+    if 'access_token' in session:
+        return render_template('index.html', logged_in=True)
+    return render_template('index.html', logged_in=False)
 
 @app.route('/full_model', methods=['GET', 'POST'])
 def full_model():
+
+    if 'access_token' not in session:
+        flash('Please login to access this feature.', 'warning')
+        return redirect(url_for('auth.login'))
+    
     result = None
     explanation = None
     shap_df = None
@@ -111,13 +201,24 @@ def full_model():
                 if isinstance(shap_df, pd.DataFrame):
                     shap_df = shap_df.rename(columns={"Feature" : "feature", "Value" : "value", "SHAP" : "shap_value"}).to_dict('records')
                     # shap_df = shap_df.to_dict('records')
-            
-            # Store ONLY what's needed for explanation in session
-            # DON'T store the entire result with csr_matrix
+
+            user_id = session.get('user_id')
+            if user_id:
+                save_prediction_to_db(
+                    user_id=user_id,
+                    prediction_type='full',
+                    prediction_label=result.get('label'),
+                    confidence=result.get('confidence'),
+                    input_text=combined_text,
+                    features=features,
+                    shap_values=shap_df
+                )
+            flash('Prediction saved to your history!', 'success')
+
+            # Store only needed sessions
             session['last_label'] = result.get('label')
             session['last_text'] = combined_text
             session['last_features'] = features
-            # Store shap as list of dicts (already converted above)
             session['last_shap'] = shap_df
             
         except Exception as e:
@@ -131,7 +232,8 @@ def full_model():
                          text=text,
                          features=features,
                          shap_df=shap_df,
-                         explanation=explanation)
+                         explanation=explanation,
+                         logged_in=True)
 
 @app.route('/text_model', methods=['GET', 'POST'])
 def text_model():
@@ -139,7 +241,9 @@ def text_model():
     explanation = None
     shap_df = None
     text = ""
-    
+
+    is_logged_in = 'access_token' in session
+
     if request.method == 'POST':
         try:
             text = request.form.get('text', '')
@@ -162,8 +266,22 @@ def text_model():
                         # shap_df = shap_df.to_dict('records')
                         # shap_df = shap_df.rename(columns={"Feature" : "feature", "SHAP" : "shap_value"}).to_dict('records')
 
-                
-                # Store ONLY what's needed
+                if is_logged_in:
+                    user_id = session.get('user_id')
+                    if user_id:
+                        save_prediction_to_db(
+                            user_id=user_id,
+                            prediction_type='text',
+                            prediction_label=result.get('label'),
+                            confidence=result.get('confidence'),
+                            input_text=text,
+                            shap_values=shap_df
+                        )
+                        flash('Prediction saved to your history!', 'success')
+                else:
+                    flash('Prediction complete! Login to save your history.', 'info')
+
+                # Store what's needed
                 session['last_label'] = result.get('label')
                 session['last_text'] = text
                 session['last_shap'] = shap_df
@@ -178,7 +296,8 @@ def text_model():
                          result=result, 
                          text=text,
                          shap_df=shap_df,
-                         explanation=explanation)
+                         explanation=explanation,
+                         logged_in = is_logged_in)
 
 @app.route('/get_explanation', methods=['POST'])
 def get_explanation():
@@ -204,11 +323,137 @@ def get_explanation():
             features=features,
             shap_values=shap_df
         )
-        
+
+        if 'access_token' in session:
+            user_id = session.get('user_id')
+            # Get the last prediction ID from the database
+            try:
+                last_prediction = supabase.table("prediction_history")\
+                    .select("id")\
+                    .eq("user_id", user_id)\
+                    .order("created_at", desc=True)\
+                    .limit(1)\
+                    .execute()
+                
+                if last_prediction.data:
+                    prediction_id = last_prediction.data[0]['id']
+                    # Save explanation
+                    explanation_data = {
+                        "prediction_id": prediction_id,
+                        "prompt": prompt,
+                        "explanation": explanation,
+                        "created_at": datetime.now().isoformat()
+                    }
+                    supabase.table("ai_explanations").insert(explanation_data).execute()
+            except Exception as e:
+                print(f"Error saving explanation: {e}")
+
         return jsonify({'explanation': explanation})
         
     except Exception as e:
         return jsonify({'error': str(e)}), 500
 
+@app.route('/history')
+def history():
+    if 'access_token' not in session:
+        flash('Please login to view your history.', 'warning')
+        return redirect(url_for('auth.login'))
+    
+    try:
+
+        if 'access_token' in session:
+            supabase.auth.set_session(
+                session.get('access_token'),
+                session.get('refresh_token')
+            )
+
+        user_id = session.get('user_id')
+        
+        if not user_id:
+            flash('User ID not found. Please login again.', 'warning')
+            return redirect(url_for('auth.login'))
+        
+        # Get prediction history
+        predictions = supabase.table("prediction_history")\
+            .select("*")\
+            .eq("user_id", user_id)\
+            .order("created_at", desc=True)\
+            .limit(100)\
+            .execute()
+        
+        predictions_data = predictions.data if predictions.data else []
+        
+        # Calculate analytics
+        analytics = {
+            'total_predictions': len(predictions_data),
+            'full_model_count': 0,
+            'text_model_count': 0,
+            'fake_count': 0,
+            'real_count': 0,
+            'total_confidence': 0,
+            'avg_confidence': 0,
+            'fake_avg_confidence': 0,
+            'real_avg_confidence': 0,
+            'latest_prediction': None,
+            'most_used_model': 'N/A',
+            'fake_percentage': 0,
+            'real_percentage': 0
+        }
+        
+        if predictions_data:
+            for pred in predictions_data:
+                if pred.get('prediction_type') == 'full':
+                    analytics['full_model_count'] += 1
+                else:
+                    analytics['text_model_count'] += 1
+                
+                if pred.get('prediction_label') == 'Fake':
+                    analytics['fake_count'] += 1
+                else:
+                    analytics['real_count'] += 1
+                
+                confidence = pred.get('confidence', 0)
+                if confidence:
+                    analytics['total_confidence'] += float(confidence)
+            
+            total = analytics['total_predictions']
+            if total > 0:
+                analytics['avg_confidence'] = analytics['total_confidence'] / total
+                
+                fake_predictions = [p for p in predictions_data if p.get('prediction_label') == 'Fake']
+                if fake_predictions:
+                    fake_conf = sum(float(p.get('confidence', 0)) for p in fake_predictions)
+                    analytics['fake_avg_confidence'] = fake_conf / len(fake_predictions)
+                
+                real_predictions = [p for p in predictions_data if p.get('prediction_label') == 'Real']
+                if real_predictions:
+                    real_conf = sum(float(p.get('confidence', 0)) for p in real_predictions)
+                    analytics['real_avg_confidence'] = real_conf / len(real_predictions)
+                
+                analytics['fake_percentage'] = (analytics['fake_count'] / total) * 100
+                analytics['real_percentage'] = (analytics['real_count'] / total) * 100
+            
+            if analytics['full_model_count'] > analytics['text_model_count']:
+                analytics['most_used_model'] = 'Full Model'
+            elif analytics['text_model_count'] > analytics['full_model_count']:
+                analytics['most_used_model'] = 'Text Model'
+            else:
+                analytics['most_used_model'] = 'Both Equally'
+            
+            if predictions_data:
+                analytics['latest_prediction'] = predictions_data[0]
+        
+        return render_template('history.html', 
+                             predictions=predictions_data,
+                             analytics=analytics,
+                             logged_in=True)
+                             
+    except Exception as e:
+        flash(f'Error loading history: {str(e)}', 'danger')
+        return render_template('history.html', 
+                             predictions=[],
+                             analytics=None,
+                             logged_in=True)
+    
 if __name__ == "__main__":
     app.run(debug=True)

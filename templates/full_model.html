@@ -173,7 +173,7 @@
                                         {% else %}
                                             {{ "%.4f"|format(item.value) }}
                                         {% endif %}
-                                        </td>
+                                    </td>
                                     <td>{{ "%.4f"|format(item.shap_value) if item.shap_value else 'N/A' }}</td>
                                 </tr>
                                 {% endfor %}
@@ -198,4 +198,65 @@
         {% endif %}
     </div>
 </div>
+
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    const getExplanationBtn = document.getElementById('getExplanation');
+    if (getExplanationBtn) {
+        getExplanationBtn.addEventListener('click', function() {
+            const prompt = document.getElementById('explanationPrompt').value;
+            const mode = this.dataset.mode;
+            
+            if (!prompt.trim()) {
+                alert('Please enter a question first.');
+                return;
+            }
+            
+            // Show loading
+            this.innerHTML = '<span class="spinner-border spinner-border-sm"></span> Generating...';
+            this.disabled = true;
+            
+            fetch('/get_explanation', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify({ prompt: prompt, mode: mode })
+            })
+            .then(response => response.json())
+            .then(data => {
+                const resultDiv = document.getElementById('explanationResult');
+                if (data.explanation) {
+                    resultDiv.innerHTML = `
+                        <div class="alert alert-info">
+                            <i class="fas fa-lightbulb"></i> 
+                            <strong>Explanation:</strong> ${data.explanation}
+                        </div>
+                    `;
+                } else if (data.error) {
+                    resultDiv.innerHTML = `
+                        <div class="alert alert-danger">
+                            <i class="fas fa-exclamation-circle"></i> 
+                            ${data.error}
+                        </div>
+                    `;
+                }
+            })
+            .catch(error => {
+                document.getElementById('explanationResult').innerHTML = `
+                    <div class="alert alert-danger">
+                        <i class="fas fa-exclamation-circle"></i> 
+                        Error generating explanation. Please try again.
+                    </div>
+                `;
+            })
+            .finally(() => {
+                this.innerHTML = '<i class="fas fa-comment"></i> Get Explanation';
+                this.disabled = false;
+            });
+        });
+    }
+});
+</script>
+
 {% endblock %}

@@ -1,6 +1,9 @@
 /* Custom styles */
 body {
     background-color: #f8f9fa;
+    min-height: 100vh;
+    display: flex;
+    flex-direction: column;
 }
 
 .navbar-brand i {
@@ -45,7 +48,8 @@ body {
 
 .footer {
     border-top: 1px solid #dee2e6;
-    margin-top: 50px;
+    margin-top: auto;
+    padding: 20px 0;
 }
 
 #explanationResult {
@@ -59,4 +63,51 @@ body {
 .spinner-border-sm {
     width: 1rem;
     height: 1rem;
+}
+
+/* Dashboard cards */
+.dashboard-card {
+    transition: transform 0.3s ease;
+}
+
+.dashboard-card:hover {
+    transform: translateY(-5px);
+}
+
+/* Auth pages */
+.auth-card {
+    max-width: 400px;
+    margin: 0 auto;
+}
+
+/* Responsive tables */
+.table-responsive {
+    border-radius: 10px;
+    overflow: hidden;
+}
+
+/* Flash messages */
+.alert {
+    border-radius: 10px;
+    border: none;
+}
+
+.alert-success {
+    background-color: #d4edda;
+    color: #155724;
+}
+
+.alert-danger {
+    background-color: #f8d7da;
+    color: #721c24;
+}
+
+.alert-warning {
+    background-color: #fff3cd;
+    color: #856404;
+}
+
+.alert-info {
+    background-color: #d1ecf1;
+    color: #0c5460;
 }

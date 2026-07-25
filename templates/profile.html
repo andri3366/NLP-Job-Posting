@@ -1,0 +1,39 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="row justify-content-center">
+    <div class="col-md-8">
+        <div class="card shadow">
+            <div class="card-header bg-primary text-white">
+                <h4 class="mb-0"><i class="fas fa-user"></i> User Profile</h4>
+            </div>
+            <div class="card-body">
+                <!-- FIXED: Added form action -->
+                <form method="POST" action="{{ url_for('auth.profile') }}">
+                    <div class="mb-3">
+                        <label class="form-label">Email</label>
+                        <input type="email" class="form-control" value="{{ profile.email if profile else '' }}" disabled>
+                        <div class="form-text">Email cannot be changed.</div>
+                    </div>
+                    <div class="mb-3">
+                        <label for="username" class="form-label">Username</label>
+                        <input type="text" class="form-control" id="username" name="username" 
+                               value="{{ profile.username if profile else '' }}">
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label">User ID</label>
+                        <input type="text" class="form-control" value="{{ profile.id if profile else '' }}" disabled>
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label">Registered</label>
+                        <input type="text" class="form-control" value="{{ profile.created_at if profile else '' }}" disabled>
+                    </div>
+                    <button type="submit" class="btn btn-primary">
+                        <i class="fas fa-save"></i> Update Profile
+                    </button>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

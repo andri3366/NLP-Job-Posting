@@ -1,0 +1,74 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="row">
+    <div class="col-lg-10 mx-auto">
+        <div class="card shadow">
+            <div class="card-header bg-primary text-white">
+                <h4 class="mb-0"><i class="fas fa-tachometer-alt"></i> Dashboard</h4>
+            </div>
+            <div class="card-body">
+                <div class="row">
+                    <div class="col-md-6 mb-3">
+                        <div class="card bg-light">
+                            <div class="card-body text-center">
+                                <i class="fas fa-file-alt fa-2x text-primary"></i>
+                                <h5 class="mt-2">Full Model Analysis</h5>
+                                <p class="text-muted">Analyze job postings with all features</p>
+                                <a href="{{ url_for('full_model') }}" class="btn btn-primary btn-sm">
+                                    Go to Full Model
+                                </a>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="col-md-6 mb-3">
+                        <div class="card bg-light">
+                            <div class="card-body text-center">
+                                <i class="fas fa-robot fa-2x text-success"></i>
+                                <h5 class="mt-2">Text Only Analysis</h5>
+                                <p class="text-muted">Quick text-based job analysis</p>
+                                <a href="{{ url_for('text_model') }}" class="btn btn-success btn-sm">
+                                    Go to Text Model
+                                </a>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                
+                <hr>
+                
+                <div class="row mt-3">
+                    <div class="col-md-6">
+                        <div class="alert alert-info">
+                            <i class="fas fa-info-circle"></i>
+                            <strong>Welcome!</strong> You are logged in as: <strong>{{ email }}</strong>
+                            <br>
+                            <small>User ID: {{ user_id }}</small>
+                            <!-- Add null checks for profile -->
+                            {% if profile %}
+                            <br>
+                            <small>Username: {{ profile.username if profile.username else email.split('@')[0] }}</small>
+                            {% if profile.created_at %}
+                            <br>
+                            <small>Member since: {{ profile.created_at }}</small>
+                            {% endif %}
+                            {% else %}
+                            <br>
+                            <small>Profile: Not fully set up yet</small>
+                            {% endif %}
+                        </div>
+                    </div>
+                    <div class="col-md-6 text-end">
+                        <a href="{{ url_for('auth.profile') }}" class="btn btn-info">
+                            <i class="fas fa-user"></i> Profile
+                        </a>
+                        <a href="{{ url_for('auth.logout') }}" class="btn btn-danger">
+                            <i class="fas fa-sign-out-alt"></i> Logout
+                        </a>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

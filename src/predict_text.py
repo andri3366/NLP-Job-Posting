@@ -13,8 +13,8 @@ from pathlib import Path
 
 MODEL_DIR = Path(__file__).resolve().parent.parent / "model"
 
-model = joblib.load(MODEL_DIR / "text_best_model.pkl")
-vectorizer = joblib.load(MODEL_DIR / "text_best_extractor.pkl")
+model = joblib.load(MODEL_DIR / "tune_text_best_model.pkl")
+vectorizer = joblib.load(MODEL_DIR / "tune_text_best_extractor.pkl")
 
 print(type(model))
 print(type(vectorizer))
@@ -46,6 +46,7 @@ def predict_posting_text(text):
     
     prediction = model.predict(X)[0]
     probability = model.predict_proba(X)[0]
+    print(probability)
     
     confidence = max(probability)
     

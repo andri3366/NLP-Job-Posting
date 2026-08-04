@@ -4,3 +4,8 @@ __pycache__/
 .ipynb_checkpoints/
 hidden.py
 .env
+SQL.sql
+streamlit.py
+supabase_client.py
+test_e2e_selenium_pytest.py
+test.py

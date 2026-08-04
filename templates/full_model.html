@@ -141,12 +141,12 @@
         <!-- Results Section -->
         {% if result %}
         <div class="mt-4">
-            <div class="card border-{% if result.label == 'Fraudlent' %}danger{% else %}success{% endif %}">
-                <div class="card-header bg-{% if result.label == 'Fraudlent' %}danger{% else %}success{% endif %} text-white">
+            <div class="card border-{% if result.label == 'Fraudulent' %}danger{% else %}success{% endif %}">
+                <div class="card-header bg-{% if result.label == 'Fraudulent' %}danger{% else %}success{% endif %} text-white">
                     <h5 class="mb-0">Analysis Result</h5>
                 </div>
                 <div class="card-body">
-                    <h4>Prediction: <span class="text-{% if result.label == 'Fraudlent' %}danger{% else %}success{% endif %}">
+                    <h4>Prediction: <span class="text-{% if result.label == 'Fraudulent' %}danger{% else %}success{% endif %}">
                         {{ result.label }}
                     </span></h4>
                     <p>Confidence: <strong>{{ "%.2f"|format(result.confidence) }}</strong></p>
@@ -192,6 +192,31 @@
                         <i class="fas fa-comment"></i> Get Explanation
                     </button>
                     <div id="explanationResult" class="mt-3"></div>
+                    
+                    <div id="chatSection" class="mt-4" style="display:none;">
+                        <hr>
+                        <h5>
+                            <i class="fas fa-comments"></i>Continue Conversation
+                        </h5>
+                        <p>
+                            Remaining Questions: <span id="remainingQuestions">5</span>
+                        </p>
+
+                        <div
+                            id="chatMessages"
+                            class="border rounded p-3 mb-3"
+                            style="height:350px;overflow-y:auto;">
+                        </div>
+
+                        <div class="input-group">
+                            <input id="chatInput" class="form-control" placeholder="Ask another question...">
+                            <button class="btn btn-primary" id="sendChat">
+                                Send
+                            </button>
+
+                        </div>
+
+                    </div>                   
                 </div>
             </div>
         </div>
@@ -200,60 +225,207 @@
 </div>
 
 <script>
-document.addEventListener('DOMContentLoaded', function() {
-    const getExplanationBtn = document.getElementById('getExplanation');
+document.addEventListener("DOMContentLoaded", function () {
+
+    let predictionId = null;
+    let conversationId = null;
+    let isLoggedIn = {{ logged_in | tojson }};
+
+    const getExplanationBtn = document.getElementById("getExplanation");
+    const chatSection = document.getElementById("chatSection");
+    const chatMessages = document.getElementById("chatMessages");
+    const remainingQuestions = document.getElementById("remainingQuestions");
+    const chatInput = document.getElementById("chatInput");
+    const sendButton = document.getElementById("sendChat");
+
     if (getExplanationBtn) {
-        getExplanationBtn.addEventListener('click', function() {
-            const prompt = document.getElementById('explanationPrompt').value;
+
+        getExplanationBtn.addEventListener("click", function () {
+
+            const prompt = document.getElementById("explanationPrompt").value.trim();
             const mode = this.dataset.mode;
-            
-            if (!prompt.trim()) {
-                alert('Please enter a question first.');
+
+            if (!prompt) {
+                alert("Please enter a question first.");
                 return;
             }
-            
-            // Show loading
-            this.innerHTML = '<span class="spinner-border spinner-border-sm"></span> Generating...';
-            this.disabled = true;
-            
-            fetch('/get_explanation', {
-                method: 'POST',
+
+            getExplanationBtn.disabled = true;
+            getExplanationBtn.innerHTML =
+                '<span class="spinner-border spinner-border-sm"></span> Generating...';
+
+            fetch("/get_explanation", {
+                method: "POST",
                 headers: {
-                    'Content-Type': 'application/json',
+                    "Content-Type": "application/json"
                 },
-                body: JSON.stringify({ prompt: prompt, mode: mode })
+                body: JSON.stringify({
+                    prompt: prompt,
+                    mode: mode
+                })
             })
             .then(response => response.json())
             .then(data => {
-                const resultDiv = document.getElementById('explanationResult');
-                if (data.explanation) {
-                    resultDiv.innerHTML = `
-                        <div class="alert alert-info">
-                            <i class="fas fa-lightbulb"></i> 
-                            <strong>Explanation:</strong> ${data.explanation}
-                        </div>
-                    `;
-                } else if (data.error) {
-                    resultDiv.innerHTML = `
+
+                getExplanationBtn.disabled = false;
+                getExplanationBtn.innerHTML =
+                    '<i class="fas fa-comment"></i> Get Explanation';
+
+                if (!data.success) {
+                    document.getElementById("explanationResult").innerHTML = `
                         <div class="alert alert-danger">
-                            <i class="fas fa-exclamation-circle"></i> 
                             ${data.error}
                         </div>
                     `;
+                    return;
                 }
-            })
-            .catch(error => {
-                document.getElementById('explanationResult').innerHTML = `
-                    <div class="alert alert-danger">
-                        <i class="fas fa-exclamation-circle"></i> 
-                        Error generating explanation. Please try again.
+
+                predictionId = data.prediction_id;
+
+                document.getElementById("explanationResult").innerHTML = `
+                    <div class="alert alert-info">
+                        <i class="fas fa-lightbulb"></i>
+                        <strong>Explanation:</strong><br><br>
+                        ${data.explanation}
                     </div>
                 `;
+                
+                if (!isLoggedIn) {
+                    return;
+                }
+                
+                fetch("/chat/start", {
+                    method: "POST",
+                    headers: {
+                        "Content-Type": "application/json"
+                    },
+                    body: JSON.stringify({
+                        prediction_id: predictionId
+                    })
+
+                })
+                .then(response => response.json())
+                .then(chat => {
+
+                    if (!chat.success) {
+                        alert(chat.message);
+                        return;
+                    }
+
+                    conversationId = chat.conversation_id;
+
+                    chatSection.style.display = "block";
+
+                    remainingQuestions.innerText = chat.remaining_questions;
+
+                    chatMessages.innerHTML = "";
+
+                    chat.messages.forEach(msg => {
+
+                        chatMessages.innerHTML += `
+                            <div class="mb-3 ${msg.role === "assistant" ? "text-primary" : ""}">
+                                <strong>${msg.role === "assistant" ? "AI" : "You"}</strong><br>
+                                ${msg.message}
+                            </div>
+                        `;
+
+                    });
+
+                    chatMessages.scrollTop =
+                        chatMessages.scrollHeight;
+
+                    chatInput.focus();
+
+                });
+
             })
-            .finally(() => {
-                this.innerHTML = '<i class="fas fa-comment"></i> Get Explanation';
-                this.disabled = false;
+            .catch(error => {
+
+                getExplanationBtn.disabled = false;
+                getExplanationBtn.innerHTML =
+                    '<i class="fas fa-comment"></i> Get Explanation';
+
+                console.error(error);
+
+                document.getElementById("explanationResult").innerHTML = `
+                    <div class="alert alert-danger">
+                        Error generating explanation.
+                    </div>
+                `;
             });
+
+        });
+
+    }
+
+    function sendMessage() {
+
+        const question = chatInput.value.trim();
+
+        if (question === "")
+            return;
+
+        sendButton.disabled = true;
+
+        fetch("/chat/send", {
+            method: "POST",
+            headers: {
+                "Content-Type": "application/json"
+            },
+            body: JSON.stringify({
+                conversation_id: conversationId,
+                question: question
+
+            })
+        })
+        .then(response => response.json())
+        .then(data => {
+
+            sendButton.disabled = false;
+
+            if (!data.success) {
+                alert(data.message);
+                return;
+            }
+
+            chatMessages.innerHTML += `
+                <div class="mb-3">
+                    <strong>You</strong><br>
+                    ${question}
+                </div>
+                <div class="mb-3 text-primary">
+                    <strong>AI</strong><br>
+                    ${data.response}
+                </div>
+            `;
+
+            chatInput.value = "";
+
+            remainingQuestions.innerText = data.remaining_questions;
+            chatMessages.scrollTop = chatMessages.scrollHeight;
+            if (data.remaining_questions <= 0) {
+                chatInput.disabled = true;
+                sendButton.disabled = true;
+            } else {
+                chatInput.focus();
+            }
+        })
+        .catch(error => {
+            sendButton.disabled = false;
+            console.error(error);
+            alert("Unable to send message.");
+        });
+    }
+
+    if (sendButton) {
+        sendButton.addEventListener("click", sendMessage);
+    }
+    if (chatInput) {
+        chatInput.addEventListener("keydown", function (e) {
+            if (e.key === "Enter") {
+                e.preventDefault();
+                sendMessage();
+            }
         });
     }
 });

@@ -12,9 +12,9 @@ from pathlib import Path
 
 MODEL_DIR = Path(__file__).resolve().parent.parent / "model"
 
-model = joblib.load(MODEL_DIR / "best_model.pkl")
-vectorizer = joblib.load(MODEL_DIR / "best_extractor_vectorizer.pkl")
-cat_columns = joblib.load(MODEL_DIR / "cat_features.pkl")
+model = joblib.load(MODEL_DIR / "tune_best_model.pkl")
+vectorizer = joblib.load(MODEL_DIR / "tune_best_extractor_vectorizer.pkl")
+cat_columns = joblib.load(MODEL_DIR / "tune_cat_features.pkl")
 def evaluate_model(model, X_test, y_test):
     pred = model.predict(X_test)
     

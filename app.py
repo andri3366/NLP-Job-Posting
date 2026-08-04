@@ -11,20 +11,22 @@ from src.predict import predict_posting, get_shap_values
 from src.predict_text import predict_posting_text, get_text_shap_values
 from src.llm_explain import explain_prediction
 from auth import auth
+from chatbot import chatbot
 from supabase_client import supabase, secret_key
 
 app = Flask(__name__)
 app.secret_key = os.getenv('SECRET_KEY', 'fallback-secret-key')
 
 app.register_blueprint(auth, url_prefix='/auth')  # Register the auth blueprint
+app.register_blueprint(chatbot)
 
 # Load models
 base_dir = os.path.dirname(__file__)
-model_path = os.path.join(base_dir, 'model/best_model.pkl')
-vectorizer_path = os.path.join(base_dir, 'model/best_extractor_vectorizer.pkl')
-cat_features_path = os.path.join(base_dir, 'model/cat_features.pkl')
-text_model_path = os.path.join(base_dir, 'model/text_best_model.pkl')
-text_vectorizer_path = os.path.join(base_dir, 'model/text_best_extractor.pkl')
+model_path = os.path.join(base_dir, 'model/tune_best_model.pkl')
+vectorizer_path = os.path.join(base_dir, 'model/tune_best_extractor_vectorizer.pkl')
+cat_features_path = os.path.join(base_dir, 'model/tune_cat_features.pkl')
+text_model_path = os.path.join(base_dir, 'model/tune_text_best_model.pkl')
+text_vectorizer_path = os.path.join(base_dir, 'model/tune_text_best_extractor.pkl')
 
 # Caching models to load once
 model = None
@@ -102,14 +104,14 @@ def save_prediction_to_db(user_id, prediction_type, prediction_label, confidence
                     supabase.table("shap_results").insert(shap_data).execute()
             
             # Save AI explanation if provided
-            if prompt and explanation:
-                explanation_data = {
-                    "prediction_id": prediction_id,
-                    "prompt": prompt,
-                    "explanation": explanation,
-                    "created_at": datetime.now().isoformat()
-                }
-                supabase.table("ai_explanations").insert(explanation_data).execute()
+            # if prompt and explanation:
+            #     explanation_data = {
+            #         "prediction_id": prediction_id,
+            #         "prompt": prompt,
+            #         "explanation": explanation,
+            #         "created_at": datetime.now().isoformat()
+            #     }
+            #     supabase.table("ai_explanations").insert(explanation_data).execute()
             
             return prediction_id
     
@@ -204,7 +206,7 @@ def full_model():
 
             user_id = session.get('user_id')
             if user_id:
-                save_prediction_to_db(
+                prediction_id = save_prediction_to_db(
                     user_id=user_id,
                     prediction_type='full',
                     prediction_label=result.get('label'),
@@ -213,7 +215,8 @@ def full_model():
                     features=features,
                     shap_values=shap_df
                 )
-            flash('Prediction saved to your history!', 'success')
+                session["prediction_id"] = prediction_id
+                flash('Prediction saved to your history!', 'success')
 
             # Store only needed sessions
             session['last_label'] = result.get('label')
@@ -269,7 +272,7 @@ def text_model():
                 if is_logged_in:
                     user_id = session.get('user_id')
                     if user_id:
-                        save_prediction_to_db(
+                        prediction_id = save_prediction_to_db(
                             user_id=user_id,
                             prediction_type='text',
                             prediction_label=result.get('label'),
@@ -277,6 +280,7 @@ def text_model():
                             input_text=text,
                             shap_values=shap_df
                         )
+                        session["prediction_id"] = prediction_id
                         flash('Prediction saved to your history!', 'success')
                 else:
                     flash('Prediction complete! Login to save your history.', 'info')
@@ -305,7 +309,7 @@ def get_explanation():
         data = request.get_json()
         prompt = data.get('prompt', '')
         mode = data.get('mode', 'full')
-        
+        prediction_id = session.get("prediction_id")
         # Get stored data from session
         label = session.get('last_label')
         text = session.get('last_text', '')
@@ -324,31 +328,44 @@ def get_explanation():
             shap_values=shap_df
         )
 
-        if 'access_token' in session:
-            user_id = session.get('user_id')
-            # Get the last prediction ID from the database
-            try:
-                last_prediction = supabase.table("prediction_history")\
-                    .select("id")\
-                    .eq("user_id", user_id)\
-                    .order("created_at", desc=True)\
-                    .limit(1)\
-                    .execute()
+        # if 'access_token' in session:
+        #     user_id = session.get('user_id')
+        #     # Get the last prediction ID from the database
+        #     try:
+        #         last_prediction = supabase.table("prediction_history")\
+        #             .select("id")\
+        #             .eq("user_id", user_id)\
+        #             .order("created_at", desc=True)\
+        #             .limit(1)\
+        #             .execute()
                 
-                if last_prediction.data:
-                    prediction_id = last_prediction.data[0]['id']
-                    # Save explanation
-                    explanation_data = {
-                        "prediction_id": prediction_id,
-                        "prompt": prompt,
-                        "explanation": explanation,
-                        "created_at": datetime.now().isoformat()
-                    }
-                    supabase.table("ai_explanations").insert(explanation_data).execute()
+        #         if last_prediction.data:
+        #             prediction_id = last_prediction.data[0]['id']
+        #             # Save explanation
+        #             explanation_data = {
+        #                 "prediction_id": prediction_id,
+        #                 "prompt": prompt,
+        #                 "explanation": explanation,
+        #                 "created_at": datetime.now().isoformat()
+        #             }
+        #             supabase.table("ai_explanations").insert(explanation_data).execute()
+        #     except Exception as e:
+        #         print(f"Error saving explanation: {e}")
+
+        if prediction_id:
+            try:
+                explanation_data = {
+                    "prediction_id" : prediction_id,
+                    "prompt" : prompt,
+                    "explanation" : explanation,
+                    "created_at" : datetime.now().isoformat()
+                }
+
+                supabase.table("ai_explanations").insert(explanation_data).execute()
             except Exception as e:
                 print(f"Error saving explanation: {e}")
 
-        return jsonify({'explanation': explanation})
+        return jsonify({"success": True, 'explanation': explanation, "prediction_id": prediction_id})
         
     except Exception as e:
         return jsonify({'error': str(e)}), 500
@@ -382,7 +399,10 @@ def history():
             .execute()
         
         predictions_data = predictions.data if predictions.data else []
-        
+
+        print("\nPrediction Labels:")
+        for pred in predictions_data:
+            print(pred["prediction_label"])
         # Calculate analytics
         analytics = {
             'total_predictions': len(predictions_data),
@@ -394,12 +414,15 @@ def history():
             'avg_confidence': 0,
             'fake_avg_confidence': 0,
             'real_avg_confidence': 0,
-            'latest_prediction': None,
+            'latest_prediction': predictions_data[0] if predictions_data else None,
             'most_used_model': 'N/A',
             'fake_percentage': 0,
             'real_percentage': 0
         }
-        
+
+        fake_conf_total = 0
+        real_conf_total = 0
+
         if predictions_data:
             for pred in predictions_data:
                 if pred.get('prediction_type') == 'full':
@@ -407,38 +430,51 @@ def history():
                 else:
                     analytics['text_model_count'] += 1
                 
-                if pred.get('prediction_label') == 'Fake':
-                    analytics['fake_count'] += 1
-                else:
-                    analytics['real_count'] += 1
-                
-                confidence = pred.get('confidence', 0)
-                if confidence:
-                    analytics['total_confidence'] += float(confidence)
+                confidence = float(pred.get("confidence", 0))
+
+                analytics["total_confidence"] += confidence
+
+                label = pred.get("prediction_label", "").strip().lower()
+
+                if label in ["fake", "fraudulent"]:
+                    analytics["fake_count"] += 1
+                    fake_conf_total += confidence
+
+                elif label in ["real", "not fraudulent"]:
+                    analytics["real_count"] += 1
+                    real_conf_total += confidence
             
             total = analytics['total_predictions']
             if total > 0:
-                analytics['avg_confidence'] = analytics['total_confidence'] / total
-                
-                fake_predictions = [p for p in predictions_data if p.get('prediction_label') == 'Fake']
-                if fake_predictions:
-                    fake_conf = sum(float(p.get('confidence', 0)) for p in fake_predictions)
-                    analytics['fake_avg_confidence'] = fake_conf / len(fake_predictions)
-                
-                real_predictions = [p for p in predictions_data if p.get('prediction_label') == 'Real']
-                if real_predictions:
-                    real_conf = sum(float(p.get('confidence', 0)) for p in real_predictions)
-                    analytics['real_avg_confidence'] = real_conf / len(real_predictions)
-                
-                analytics['fake_percentage'] = (analytics['fake_count'] / total) * 100
-                analytics['real_percentage'] = (analytics['real_count'] / total) * 100
-            
-            if analytics['full_model_count'] > analytics['text_model_count']:
-                analytics['most_used_model'] = 'Full Model'
-            elif analytics['text_model_count'] > analytics['full_model_count']:
-                analytics['most_used_model'] = 'Text Model'
+
+                analytics["avg_confidence"] = (
+                    analytics["total_confidence"] / total
+                )
+
+                analytics["fake_percentage"] = (
+                    analytics["fake_count"] / total
+                ) * 100
+
+                analytics["real_percentage"] = (
+                    analytics["real_count"] / total
+                ) * 100
+
+                if analytics["fake_count"] > 0:
+                    analytics["fake_avg_confidence"] = (
+                        fake_conf_total / analytics["fake_count"]
+                    )
+
+                if analytics["real_count"] > 0:
+                    analytics["real_avg_confidence"] = (
+                        real_conf_total / analytics["real_count"]
+                    )
+
+            if analytics["full_model_count"] > analytics["text_model_count"]:
+                analytics["most_used_model"] = "Full Model"
+            elif analytics["text_model_count"] > analytics["full_model_count"]:
+                analytics["most_used_model"] = "Text Model"
             else:
-                analytics['most_used_model'] = 'Both Equally'
+                analytics["most_used_model"] = "Both Equally"
             
             if predictions_data:
                 analytics['latest_prediction'] = predictions_data[0]
@@ -456,4 +492,4 @@ def history():
                              logged_in=True)
     
 if __name__ == "__main__":
-    app.run(debug=True)
+    app.run(debug=False)

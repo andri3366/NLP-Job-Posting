@@ -1,3 +1,5 @@
+"""Compare hybrid extractors and classifiers, then serialize the best artifacts."""
+
 import pandas as pd
 import joblib
 

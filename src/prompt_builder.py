@@ -1,3 +1,4 @@
+"""Construct constrained prompts from saved prediction and SHAP context."""
 
 
 class PromptBuilder:

@@ -1,3 +1,5 @@
+"""Shared OpenAI client configuration and response error handling."""
+
 from openai import OpenAI, OpenAIError, RateLimitError
 import os
 

@@ -1,3 +1,5 @@
+"""Streamlit prototype for the original prediction and explanation workflow."""
+
 import streamlit as st
 import pickle
 import joblib

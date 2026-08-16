@@ -1,3 +1,5 @@
+"""TF-IDF, SBERT, and hybrid feature extraction for model training and inference."""
+
 import pandas as pd
 from scipy.sparse import hstack, csr_matrix
 from sklearn.feature_extraction.text import TfidfVectorizer

@@ -1,3 +1,5 @@
+"""Load the text-only model and generate text feature explanations."""
+
 from sklearn.metrics import classification_report, confusion_matrix, accuracy_score
 from src.preprocess import clean_text
 import joblib

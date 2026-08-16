@@ -1,3 +1,5 @@
+"""Build evidence-grounded prompts for one-shot prediction explanations."""
+
 from openai import OpenAI, RateLimitError, OpenAIError
 import os
 from src.llm_client import LLMClient

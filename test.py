@@ -1,3 +1,5 @@
+"""Diagnostic script for inspecting serialized model and extractor artifacts."""
+
 import joblib
 
 model_text = joblib.load("model/text_best_model.pkl")

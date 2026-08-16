@@ -1,3 +1,5 @@
+"""Flask application entry point for prediction, persistence, and web routes."""
+
 from flask import Flask, render_template, request, redirect, url_for, flash, jsonify, session
 import pickle
 import joblib

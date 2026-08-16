@@ -1,3 +1,5 @@
+"""Load the full model, generate predictions, and calculate SHAP evidence."""
+
 from sklearn.metrics import classification_report, confusion_matrix, accuracy_score
 from src.preprocess import clean_text
 import joblib

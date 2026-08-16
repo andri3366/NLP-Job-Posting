@@ -1,3 +1,5 @@
+"""Hyperparameter tuning utilities for the XGBoost TF-IDF model."""
+
 import json
 import os
 from pathlib import Path

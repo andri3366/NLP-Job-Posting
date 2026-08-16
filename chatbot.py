@@ -1,3 +1,5 @@
+"""HTTP routes for prediction-grounded chatbot conversations."""
+
 from flask import Blueprint, render_template, request, redirect, url_for, flash, session, jsonify
 from src.chabot_service import ChatbotServices
 

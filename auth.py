@@ -1,3 +1,5 @@
+"""Authentication and user-profile routes backed by Supabase Auth."""
+
 from flask import Blueprint, render_template, request, redirect, url_for, flash, session
 from supabase import create_client, Client
 from supabase_client import supabase  # Import the Supabase client from supabase_client.py

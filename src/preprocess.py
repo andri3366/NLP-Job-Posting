@@ -1,3 +1,5 @@
+"""Normalize job-posting text before vectorization or embedding."""
+
 # Raw text collection
 # Noise removal
 # Normalization

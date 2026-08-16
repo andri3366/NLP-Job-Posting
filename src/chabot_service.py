@@ -1,3 +1,5 @@
+"""Conversation service for retrieving prediction context and generating replies."""
+
 from datetime import datetime
 from supabase_client import supabase
 from src.llm_client import LLMClient

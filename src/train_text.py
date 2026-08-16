@@ -1,3 +1,5 @@
+"""Train and compare text-only representations and classification models."""
+
 import pandas as pd
 import joblib
 

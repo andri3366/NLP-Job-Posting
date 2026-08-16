@@ -1,3 +1,5 @@
+"""Supabase client configuration loaded from protected environment variables."""
+
 import os 
 from dotenv import load_dotenv
 from supabase import create_client

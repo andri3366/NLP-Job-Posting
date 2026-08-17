@@ -23,11 +23,6 @@ class LLMClient:
             )
 
             return response.choices[0].message.content.strip()
-
-        except RateLimitError:
-            if "insufficient_quota" in str(e):
-                return "Error: Insufficient quota for OpenAI API. Please check your usage and billing details."
-            return "Error: API rate limit exceeded. Please try again later."
         except OpenAIError as e:
             print(f"OpenAI API Error: {str(e)}")
             return ("An error occured while communicating with the AI service")
